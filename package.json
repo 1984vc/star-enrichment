@@ -1,0 +1,31 @@
+{
+  "name": "star-enrichment",
+  "version": "1.0.0",
+  "description": "GitHub Stargazers Enrichment Worker",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
+    "build": "tsc",
+    "run-once": "tsx src/worker/index.ts",
+    "eval": "tsx src/enrichment/eval/runner.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.20.0",
+  "devDependencies": {
+    "@types/node": "^25.0.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@duckdb/node-api": "1.4.3-r.1",
+    "@openrouter/ai-sdk-provider": "^1.5.2",
+    "ai": "^5.0.108",
+    "dotenv": "^17.2.3",
+    "duckdb": "^1.4.3",
+    "zod": "^4.1.13"
+  }
+}
