@@ -4,21 +4,19 @@
 
 # Star Enrichment
 
-A CLI tool that fetches GitHub stargazers and enriches their profiles with contact information using the GitHub API and LLM extraction.
+A CLI tool that fetches GitHub stargazers and enriches their profiles with demographic and professional information using the GitHub API and LLM extraction. Understand who your users are, where they work, and what industries they represent.
 
 ## Features
 
 - Fetches all stargazers from any GitHub repository
 - Enriches profiles with:
-  - Email (from profile or commit history)
-  - Country (inferred from location)
+  - Country/region (inferred from location)
   - Current and past employers
-  - LinkedIn URL
-  - Twitter URL
-  - Website URL
-  - University
-  - Other social accounts
-- Exports to CSV
+  - Industry and company size insights
+  - University/education background
+  - Professional profiles (LinkedIn, Twitter)
+  - Personal website
+- Exports to CSV for analysis
 - Random sampling for quick repository analysis
 - Adaptive rate limiting to stay within GitHub API limits
 
@@ -85,15 +83,13 @@ pnpm cli dump owner/repo -o ./output.csv
 | username | GitHub username |
 | starred_at | When they starred the repo |
 | name | Full name |
-| email | Email address |
-| country | Inferred country |
+| country | Inferred country/region |
 | current_employer | Current employer(s) |
 | past_employers | Previous employers |
+| university | University/education |
 | linkedin_url | LinkedIn profile URL |
 | twitter_url | Twitter/X profile URL |
 | website_url | Personal website |
-| university | University/education |
-| other_socials | Other social accounts (e.g., Instagram, Mastodon) |
 
 ## Data Storage
 
@@ -112,8 +108,8 @@ The tool uses adaptive rate limiting:
 Each enrichment makes 2-4 GitHub API calls:
 1. User profile (always)
 2. Social accounts (always)
-3. User repos (only if email missing)
-4. Repo commits (only if repos found and email missing)
+3. User repos (if additional context needed)
+4. Repo commits (if additional context needed)
 
 ## Architecture
 
