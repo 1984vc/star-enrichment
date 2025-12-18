@@ -27,10 +27,17 @@ export async function initializeSchema(db: DuckDBInstance): Promise<void> {
         linkedin_url VARCHAR,
         website_url VARCHAR,
         university VARCHAR,
+        email VARCHAR,
         twitter_username VARCHAR,
+        social_accounts TEXT,
         raw_github_profile TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
+    `);
+
+    // Add social_accounts column if it doesn't exist (for existing databases)
+    await connection.run(`
+      ALTER TABLE enriched_profiles ADD COLUMN IF NOT EXISTS social_accounts TEXT
     `);
   } finally {
     connection.closeSync();

@@ -11,6 +11,7 @@ export const EnrichedProfileSchema = z.object({
   linkedin_url: z.string().nullable(),
   website_url: z.string().nullable(),
   university: z.string().nullable(),
+  email: z.string().nullable(),
 });
 
 export type EnrichedProfile = z.infer<typeof EnrichedProfileSchema>;

@@ -22,3 +22,25 @@ export interface GitHubUserProfile {
   created_at: string;
   updated_at: string;
 }
+
+export interface GitHubRepo {
+  id: number;
+  name: string;
+  full_name: string;
+  owner: { login: string };
+  updated_at: string;
+  fork: boolean;
+}
+
+export interface GitHubCommit {
+  sha: string;
+  commit: {
+    author: { name: string; email: string } | null;
+    committer: { name: string; email: string } | null;
+  };
+}
+
+export interface GitHubSocialAccount {
+  provider: string;
+  url: string;
+}

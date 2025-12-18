@@ -9,7 +9,11 @@
       "Bash(pnpm build:*)",
       "WebFetch(domain:api.github.com)",
       "Bash(mkdir:*)",
-      "Bash(pnpm eval)"
+      "Bash(pnpm eval)",
+      "Bash(pnpm cli --help:*)",
+      "Bash(pnpm cli enrich:*)",
+      "Bash(pnpm cli dump:*)",
+      "Bash(pnpm cli:*)"
     ]
   }
 }

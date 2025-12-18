@@ -5,6 +5,7 @@ export interface EvalFixture {
   name: string;
   description: string;
   input: GitHubUserProfile;
+  candidateEmails?: string[];
   expected: EnrichedProfile;
 }
 
@@ -34,6 +35,7 @@ export const fixtures: EvalFixture[] = [
       linkedin_url: null,
       website_url: "http://maraby.org/",
       university: null,
+      email: null,
     },
   },
 
@@ -66,6 +68,7 @@ export const fixtures: EvalFixture[] = [
       linkedin_url: null,
       website_url: null,
       university: null,
+      email: null,
     },
   },
 
@@ -94,6 +97,7 @@ export const fixtures: EvalFixture[] = [
       linkedin_url: null,
       website_url: "https://sindresorhus.com/apps",
       university: null,
+      email: null,
     },
   },
 
@@ -122,6 +126,7 @@ export const fixtures: EvalFixture[] = [
       linkedin_url: null,
       website_url: "https://tangled.org/@danabra.mov",
       university: null,
+      email: null,
     },
   },
 
@@ -150,6 +155,7 @@ export const fixtures: EvalFixture[] = [
       linkedin_url: null,
       website_url: "http://getify.me",
       university: null,
+      email: null,
     },
   },
 
@@ -178,6 +184,7 @@ export const fixtures: EvalFixture[] = [
       linkedin_url: null,
       website_url: null,
       university: null,
+      email: null,
     },
   },
 
@@ -209,6 +216,127 @@ export const fixtures: EvalFixture[] = [
       linkedin_url: null,
       website_url: "http://fabien.potencier.org/",
       university: null,
+      email: null,
+    },
+  },
+
+  // Email extraction test cases
+  {
+    name: "email-exact-match",
+    description: "Email matching with exact username match in candidate emails",
+    input: {
+      id: 1001,
+      login: "johndoe",
+      name: "John Doe",
+      bio: "Software Engineer",
+      location: "New York",
+      company: "Acme Inc",
+      blog: "",
+      twitter_username: null,
+      email: null,
+      public_repos: 50,
+      followers: 100,
+      following: 50,
+      created_at: "2020-01-01T00:00:00Z",
+      updated_at: "2024-01-01T00:00:00Z",
+    },
+    candidateEmails: ["johndoe@gmail.com", "random@company.com", "other@test.org"],
+    expected: {
+      country: "United States",
+      employers: [{ name: "Acme Inc", current: true }],
+      linkedin_url: null,
+      website_url: null,
+      university: null,
+      email: "johndoe@gmail.com",
+    },
+  },
+
+  {
+    name: "email-name-match",
+    description: "Email matching based on full name similarity",
+    input: {
+      id: 1002,
+      login: "jsmith42",
+      name: "Jane Smith",
+      bio: "Backend Developer",
+      location: "London, UK",
+      company: "TechCorp",
+      blog: "",
+      twitter_username: null,
+      email: null,
+      public_repos: 30,
+      followers: 200,
+      following: 100,
+      created_at: "2019-01-01T00:00:00Z",
+      updated_at: "2024-01-01T00:00:00Z",
+    },
+    candidateEmails: ["jane.smith@techcorp.com", "admin@techcorp.com", "support@techcorp.com"],
+    expected: {
+      country: "United Kingdom",
+      employers: [{ name: "TechCorp", current: true }],
+      linkedin_url: null,
+      website_url: null,
+      university: null,
+      email: "jane.smith@techcorp.com",
+    },
+  },
+
+  {
+    name: "email-no-match",
+    description: "No confident email match from candidates",
+    input: {
+      id: 1003,
+      login: "devuser123",
+      name: "Alex Developer",
+      bio: "Full-stack dev",
+      location: "Berlin",
+      company: null,
+      blog: "",
+      twitter_username: null,
+      email: null,
+      public_repos: 20,
+      followers: 50,
+      following: 30,
+      created_at: "2021-01-01T00:00:00Z",
+      updated_at: "2024-01-01T00:00:00Z",
+    },
+    candidateEmails: ["randomuser@gmail.com", "test@example.com"],
+    expected: {
+      country: "Germany",
+      employers: [],
+      linkedin_url: null,
+      website_url: null,
+      university: null,
+      email: null,
+    },
+  },
+
+  {
+    name: "email-from-profile",
+    description: "Email directly from profile (no candidate lookup needed)",
+    input: {
+      id: 1004,
+      login: "publicdev",
+      name: "Public Developer",
+      bio: "Open source contributor",
+      location: "San Francisco",
+      company: "OpenSource Co",
+      blog: "https://publicdev.io",
+      twitter_username: "publicdev",
+      email: "hello@publicdev.io",
+      public_repos: 100,
+      followers: 500,
+      following: 200,
+      created_at: "2018-01-01T00:00:00Z",
+      updated_at: "2024-01-01T00:00:00Z",
+    },
+    expected: {
+      country: "United States",
+      employers: [{ name: "OpenSource Co", current: true }],
+      linkedin_url: null,
+      website_url: "https://publicdev.io",
+      university: null,
+      email: "hello@publicdev.io",
     },
   },
 ];

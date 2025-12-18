@@ -168,7 +168,7 @@ async function runFixture(fixture: EvalFixture): Promise<EvalResult> {
   const fields: FieldResult[] = [];
 
   try {
-    const actual = await extractProfileData(fixture.input);
+    const actual = await extractProfileData(fixture.input, fixture.candidateEmails);
 
     const fieldNames: (keyof EnrichedProfile)[] = [
       "country",
@@ -176,6 +176,7 @@ async function runFixture(fixture: EvalFixture): Promise<EvalResult> {
       "linkedin_url",
       "website_url",
       "university",
+      "email",
     ];
 
     for (const field of fieldNames) {

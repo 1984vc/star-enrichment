@@ -1,14 +1,17 @@
 {
   "name": "star-enrichment",
   "version": "1.0.0",
-  "description": "GitHub Stargazers Enrichment Worker",
+  "description": "GitHub Stargazers Enrichment Tool",
   "type": "module",
   "main": "dist/index.js",
+  "bin": {
+    "star-enrichment": "./dist/cli.js"
+  },
   "scripts": {
+    "cli": "tsx src/cli.ts",
     "dev": "tsx watch src/index.ts",
     "start": "tsx src/index.ts",
     "build": "tsc",
-    "run-once": "tsx src/worker/index.ts",
     "eval": "tsx src/enrichment/eval/runner.ts"
   },
   "keywords": [],
@@ -24,6 +27,7 @@
     "@duckdb/node-api": "1.4.3-r.1",
     "@openrouter/ai-sdk-provider": "^1.5.2",
     "ai": "^5.0.108",
+    "commander": "^14.0.2",
     "dotenv": "^17.2.3",
     "duckdb": "^1.4.3",
     "zod": "^4.1.13"

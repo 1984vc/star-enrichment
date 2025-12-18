@@ -2,11 +2,19 @@ import { DuckDBInstance } from "@duckdb/node-api";
 import path from "path";
 
 let instance: DuckDBInstance | null = null;
+let currentPath: string | null = null;
 
-export async function getDb(): Promise<DuckDBInstance> {
-  if (!instance) {
-    const dbPath = path.resolve(process.cwd(), "data", "stargazers.db");
-    instance = await DuckDBInstance.create(dbPath);
+const DEFAULT_DB_PATH = "./data/stargazers.db";
+
+export async function getDb(dbPath?: string): Promise<DuckDBInstance> {
+  const resolvedPath = path.resolve(process.cwd(), dbPath || DEFAULT_DB_PATH);
+
+  if (!instance || currentPath !== resolvedPath) {
+    if (instance) {
+      instance.closeSync();
+    }
+    instance = await DuckDBInstance.create(resolvedPath);
+    currentPath = resolvedPath;
   }
   return instance;
 }
