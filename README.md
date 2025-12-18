@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="./assets/gh-header.jpeg" alt="Star Enrichment Patent Diagram Header" width="100%">
+</p>
+
 # Star Enrichment
 
 A CLI tool that fetches GitHub stargazers and enriches their profiles with contact information using the GitHub API and LLM extraction.
