@@ -2,6 +2,7 @@ import "dotenv/config";
 import { fixtures, type EvalFixture } from "./fixtures.js";
 import { extractProfileData } from "../extractor.js";
 import type { EnrichedProfile, Employer } from "../types.js";
+import { standardizeCountry } from "../country.js";
 
 interface FieldResult {
   field: string;
@@ -23,24 +24,9 @@ function normalizeString(s: string | null | undefined): string | null {
   return s.toLowerCase().trim();
 }
 
-// Country name variations that should be considered equivalent
-const countryAliases: Record<string, string[]> = {
-  "united states": ["us", "usa", "united states of america", "u.s.", "u.s.a."],
-  "united kingdom": ["uk", "great britain", "england", "gb"],
-  "germany": ["deutschland"],
-};
-
 function normalizeCountry(country: string | null): string | null {
-  if (!country) return null;
-  const normalized = country.toLowerCase().trim();
-
-  // Check if it's an alias
-  for (const [canonical, aliases] of Object.entries(countryAliases)) {
-    if (normalized === canonical || aliases.includes(normalized)) {
-      return canonical;
-    }
-  }
-  return normalized;
+  // Use the same standardization function as the extractor
+  return standardizeCountry(country);
 }
 
 function normalizeEmployerName(name: string): string {
