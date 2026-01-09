@@ -194,10 +194,10 @@ export async function runEnrich(options: EnrichOptions): Promise<{ enriched: num
           ]
         );
 
-        // Update status
+        // Update status and join date
         await connection.run(
-          `UPDATE stargazers SET enrichment_status = 'completed', enriched_at = CURRENT_TIMESTAMP WHERE id = ?`,
-          [id]
+          `UPDATE stargazers SET enrichment_status = 'completed', enriched_at = CURRENT_TIMESTAMP, join_date = ? WHERE id = ?`,
+          [profile.created_at, id]
         );
 
         enriched++;

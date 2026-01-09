@@ -9,6 +9,7 @@ export async function initializeSchema(db: DuckDBInstance): Promise<void> {
         id INTEGER PRIMARY KEY,
         username VARCHAR NOT NULL UNIQUE,
         starred_at TIMESTAMP,
+        join_date TIMESTAMP,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         enriched_at TIMESTAMP,
         enrichment_status VARCHAR DEFAULT 'pending'
@@ -38,6 +39,11 @@ export async function initializeSchema(db: DuckDBInstance): Promise<void> {
     // Add social_accounts column if it doesn't exist (for existing databases)
     await connection.run(`
       ALTER TABLE enriched_profiles ADD COLUMN IF NOT EXISTS social_accounts TEXT
+    `);
+
+    // Add join_date column if it doesn't exist (for existing databases)
+    await connection.run(`
+      ALTER TABLE stargazers ADD COLUMN IF NOT EXISTS join_date TIMESTAMP
     `);
   } finally {
     connection.closeSync();

@@ -82,7 +82,9 @@ pnpm cli dump owner/repo -o ./output.csv
 |--------|-------------|
 | username | GitHub username |
 | starred_at | When they starred the repo |
+| join_date | When they joined GitHub |
 | name | Full name |
+| email | Email address |
 | country | Inferred country/region |
 | current_employer | Current employer(s) |
 | past_employers | Previous employers |
@@ -90,6 +92,7 @@ pnpm cli dump owner/repo -o ./output.csv
 | linkedin_url | LinkedIn profile URL |
 | twitter_url | Twitter/X profile URL |
 | website_url | Personal website |
+| other_socials | Other social media accounts |
 
 ## Data Storage
 

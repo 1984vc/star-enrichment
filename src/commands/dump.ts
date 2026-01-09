@@ -22,6 +22,7 @@ export async function dumpCommand(repo: string, options: DumpOptions): Promise<v
       SELECT
         s.username,
         s.starred_at,
+        s.join_date,
         e.name,
         e.email,
         e.country,
@@ -43,6 +44,7 @@ export async function dumpCommand(repo: string, options: DumpOptions): Promise<v
     const headers = [
       "username",
       "starred_at",
+      "join_date",
       "name",
       "email",
       "country",
@@ -125,22 +127,23 @@ export async function dumpCommand(repo: string, options: DumpOptions): Promise<v
     const lines: string[] = [headers.join(",")];
 
     for (const row of rows) {
-      // row: [username, starred_at, name, email, country, employers, linkedin_url, website_url, university, twitter_username, social_accounts]
-      const { current, past } = parseEmployers(row[5]);
-      // Pass linkedin_url (row[6]), twitter_username (row[9]), and social_accounts (row[10])
-      const { linkedin, twitter, others } = parseSocialAccounts(row[10], row[6], row[9]);
+      // row: [username, starred_at, join_date, name, email, country, employers, linkedin_url, website_url, university, twitter_username, social_accounts]
+      const { current, past } = parseEmployers(row[6]);
+      // Pass linkedin_url (row[7]), twitter_username (row[10]), and social_accounts (row[11])
+      const { linkedin, twitter, others } = parseSocialAccounts(row[11], row[7], row[10]);
       const values = [
         escapeCSV(row[0]), // username
         escapeCSV(row[1]), // starred_at
-        escapeCSV(row[2]), // name
-        escapeCSV(row[3]), // email
-        escapeCSV(row[4]), // country
+        escapeCSV(row[2]), // join_date
+        escapeCSV(row[3]), // name
+        escapeCSV(row[4]), // email
+        escapeCSV(row[5]), // country
         escapeCSV(current), // current_employer
         escapeCSV(past), // past_employers
         escapeCSV(linkedin), // linkedin_url (from dedicated field or social_accounts)
         escapeCSV(twitter), // twitter_url (from dedicated field or social_accounts)
-        escapeCSV(row[7]), // website_url
-        escapeCSV(row[8]), // university
+        escapeCSV(row[8]), // website_url
+        escapeCSV(row[9]), // university
         escapeCSV(others), // other_socials (excludes linkedin and twitter)
       ];
       lines.push(values.join(","));
