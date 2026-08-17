@@ -9,6 +9,7 @@ const GITHUB_API_VERSION = "2026-03-10";
 
 interface GraphQLError {
   message: string;
+  type?: string;
 }
 
 interface GraphQLResponse<T> {
@@ -111,6 +112,17 @@ export class GitHubClient {
     }
 
     const body = await response.json() as GraphQLResponse<T>;
+
+    const rateLimited = this.rateLimitRemaining === 0 && (
+      response.status === 403 || body.errors?.some((error) => error.type === "RATE_LIMITED")
+    );
+    if (rateLimited) {
+      const waitTime = Math.max(0, this.rateLimitReset * 1000 - Date.now());
+      console.log(`Rate limited! Waiting ${Math.ceil(waitTime / 1000)}s until reset...`);
+      await this.sleep(waitTime + 1000); // Add 1s buffer
+      return this.graphqlRequest<T>(query, variables);
+    }
+
     if (!response.ok || body.errors?.length) {
       const message = body.errors?.map((error) => error.message).join("; ") || response.statusText;
       throw new Error(`GitHub GraphQL API error: ${response.status} ${message}`);
@@ -209,14 +221,14 @@ export class GitHubClient {
           user: { id: edge.node.databaseId, login: edge.node.login },
         }));
 
-      if (stargazers.length === 0) {
-        break;
-      }
-
       allStargazers.push(...stargazers);
 
       if (!connection.pageInfo.hasNextPage) {
         break;
+      }
+
+      if (!connection.pageInfo.endCursor) {
+        throw new Error("GitHub GraphQL API error: response indicated another page but did not provide an end cursor");
       }
 
       cursor = connection.pageInfo.endCursor;
