@@ -5,6 +5,26 @@ const MIN_DELAY_MS = 100; // Minimum delay between requests
 const MAX_DELAY_MS = 60000; // Maximum delay (1 minute)
 const RATE_LIMIT_THRESHOLD = 500; // Start adaptive pacing when below this
 const RATE_LIMIT_RESERVE = 20; // Always keep this many calls in reserve
+const GITHUB_API_VERSION = "2026-03-10";
+
+interface GraphQLError {
+  message: string;
+  type?: string;
+}
+
+interface GraphQLResponse<T> {
+  data?: T;
+  errors?: GraphQLError[];
+}
+
+interface GraphQLStargazersResult {
+  repository: {
+    stargazers: {
+      edges: Array<{ node: { databaseId: number | null; login: string } | null; starredAt: string | null }>;
+      pageInfo: { hasNextPage: boolean; endCursor: string | null };
+    };
+  } | null;
+}
 
 export class GitHubClient {
   private token: string;
@@ -25,7 +45,8 @@ export class GitHubClient {
       headers: {
         Authorization: `Bearer ${this.token}`,
         Accept: "application/vnd.github+json",
-        "X-GitHub-Api-Version": "2022-11-28",
+        "X-GitHub-Api-Version": GITHUB_API_VERSION,
+        "User-Agent": "star-enrichment",
         ...headers,
       },
     });
@@ -48,10 +69,70 @@ export class GitHubClient {
         await this.sleep(waitTime + 1000); // Add 1s buffer
         return this.request<T>(endpoint, headers);
       }
-      throw new Error(`GitHub API error: ${response.status} ${response.statusText}`);
+      const responseBody = await response.text();
+      let message = response.statusText;
+
+      try {
+        const parsed = JSON.parse(responseBody) as { message?: string };
+        if (parsed.message) message = parsed.message;
+      } catch {
+        // Keep the HTTP status text when GitHub does not return JSON.
+      }
+
+      const requiredPermissions = response.headers.get("X-Accepted-GitHub-Permissions");
+      const permissionsHint = requiredPermissions ? ` (required permissions: ${requiredPermissions})` : "";
+      throw new Error(`GitHub API error: ${response.status} ${message}${permissionsHint}`);
     }
 
     return response.json() as Promise<T>;
+  }
+
+  private async graphqlRequest<T>(query: string, variables: Record<string, unknown>): Promise<T> {
+    await this.adaptiveWait();
+
+    const response = await fetch(`${GITHUB_API_BASE}/graphql`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${this.token}`,
+        Accept: "application/vnd.github+json",
+        "Content-Type": "application/json",
+        "X-GitHub-Api-Version": GITHUB_API_VERSION,
+        "User-Agent": "star-enrichment",
+      },
+      body: JSON.stringify({ query, variables }),
+    });
+
+    this.rateLimitRemaining = parseInt(response.headers.get("X-RateLimit-Remaining") || "5000", 10);
+    this.rateLimitReset = parseInt(response.headers.get("X-RateLimit-Reset") || "0", 10);
+    this.requestCount++;
+
+    if (this.requestCount === 1 || this.requestCount % 100 === 0 || this.rateLimitRemaining < this.lastLoggedRemaining - 500) {
+      this.logRateLimitStatus();
+      this.lastLoggedRemaining = this.rateLimitRemaining;
+    }
+
+    const body = await response.json() as GraphQLResponse<T>;
+
+    const rateLimited = this.rateLimitRemaining === 0 && (
+      response.status === 403 || body.errors?.some((error) => error.type === "RATE_LIMITED")
+    );
+    if (rateLimited) {
+      const waitTime = Math.max(0, this.rateLimitReset * 1000 - Date.now());
+      console.log(`Rate limited! Waiting ${Math.ceil(waitTime / 1000)}s until reset...`);
+      await this.sleep(waitTime + 1000); // Add 1s buffer
+      return this.graphqlRequest<T>(query, variables);
+    }
+
+    if (!response.ok || body.errors?.length) {
+      const message = body.errors?.map((error) => error.message).join("; ") || response.statusText;
+      throw new Error(`GitHub GraphQL API error: ${response.status} ${message}`);
+    }
+
+    if (!body.data) {
+      throw new Error("GitHub GraphQL API error: response did not contain data");
+    }
+
+    return body.data;
   }
 
   private async adaptiveWait(): Promise<void> {
@@ -108,23 +189,49 @@ export class GitHubClient {
 
   async getAllStargazers(owner: string, repo: string): Promise<GitHubStargazer[]> {
     const allStargazers: GitHubStargazer[] = [];
+    let cursor: string | null = null;
+    const first = 100;
     let page = 1;
-    const perPage = 100;
 
     while (true) {
       console.log(`Fetching stargazers page ${page}...`);
-      const stargazers = await this.getStargazers(owner, repo, page, perPage);
+      const result: GraphQLStargazersResult = await this.graphqlRequest<GraphQLStargazersResult>(
+        `query ListStargazers($owner: String!, $repo: String!, $first: Int!, $after: String) {
+          repository(owner: $owner, name: $repo) {
+            stargazers(first: $first, after: $after) {
+              edges { starredAt node { databaseId login } }
+              pageInfo { hasNextPage endCursor }
+            }
+          }
+        }`,
+        { owner, repo, first, after: cursor }
+      );
 
-      if (stargazers.length === 0) {
-        break;
+      if (!result.repository) {
+        throw new Error(`GitHub GraphQL API error: repository ${owner}/${repo} was not found`);
       }
+
+      const connection = result.repository.stargazers;
+      const stargazers = connection.edges
+        .filter((edge): edge is { node: { databaseId: number; login: string }; starredAt: string } =>
+          edge.node !== null && edge.node.databaseId !== null && edge.starredAt !== null
+        )
+        .map((edge) => ({
+          starred_at: edge.starredAt,
+          user: { id: edge.node.databaseId, login: edge.node.login },
+        }));
 
       allStargazers.push(...stargazers);
 
-      if (stargazers.length < perPage) {
+      if (!connection.pageInfo.hasNextPage) {
         break;
       }
 
+      if (!connection.pageInfo.endCursor) {
+        throw new Error("GitHub GraphQL API error: response indicated another page but did not provide an end cursor");
+      }
+
+      cursor = connection.pageInfo.endCursor;
       page++;
       // Adaptive rate limiting is handled by request()
     }

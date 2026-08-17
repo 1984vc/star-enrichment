@@ -19,6 +19,7 @@ A CLI tool that fetches GitHub stargazers and enriches their profiles with demog
 - Exports to CSV for analysis
 - Random sampling for quick repository analysis
 - Adaptive rate limiting to stay within GitHub API limits
+- Uses GitHub GraphQL for stargazer listing when REST access is restricted
 
 ## Installation
 
@@ -31,9 +32,23 @@ pnpm install
 Create a `.env` file:
 
 ```env
-GITHUB_TOKEN=ghp_...
+GITHUB_TOKEN=github_pat_...
 OPENROUTER_API_KEY=sk-or-...
 ```
+
+`GITHUB_TOKEN` must be a GitHub fine-grained personal access token with:
+
+- Resource owner set to the organization that owns the repository (for example,
+  `firezone` for `firezone/firezone`)
+- Repository access to the repository being analyzed
+- `Metadata: Read` repository permission
+- A user who is an administrator or collaborator on that repository
+
+GitHub restricts the stargazer-listing API. A token can successfully access
+repository metadata but still receive `403 Forbidden` (`Resource not accessible
+by personal access token`) or `404 Not Found` from the stargazers endpoint when
+it does not have the required access. The repository itself may be public; the
+token user still needs the required repository role.
 
 ## Usage
 
